@@ -1,6 +1,13 @@
 ﻿using AutoMapper;
 using AutoMapper.Mappers;
 using BenchmarkDotNet.Attributes;
+using Bond;
+using Bond.IO.Unsafe;
+using Bond.Protocols;
+using Newtonsoft.Json;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.Serialization;
 
 namespace SerializationPerfTest
 {
@@ -9,6 +16,9 @@ namespace SerializationPerfTest
         private SmallObjectWithStrings sampleStringObject;
         private SmallObjectWithStringsDataContract dataContractObject;
         private SmallObjectWithStringsBond bondObject;
+        private JsonSerializer jsonSerializer;
+        private SmallObjectWithStringsJson jsonObject;
+        private DataContractSerializer dataContractSerializer;
 
         [Setup]
         public void GenerateObject()
@@ -28,12 +38,24 @@ namespace SerializationPerfTest
             var mapper = config.CreateMapper();
             this.dataContractObject = mapper.Map<SmallObjectWithStringsDataContract>(this.sampleStringObject);
             this.bondObject = mapper.Map<SmallObjectWithStringsBond>(this.sampleStringObject);
+            this.jsonObject = mapper.Map<SmallObjectWithStringsJson>(this.sampleStringObject);
+
+            this.jsonSerializer = new JsonSerializer() { NullValueHandling = NullValueHandling.Ignore };
+
+            this.dataContractSerializer = new DataContractSerializer(typeof(SmallObjectWithStringsDataContract));
         }
 
         [Benchmark]
-        public void NewtonsoftJsonReusedSerializer()
+        public byte[] NewtonsoftJsonReusedSerializer()
         {
-
+            using(var ms = new MemoryStream())
+            using (var sw = new StreamWriter(ms))
+            using (var jw = new JsonTextWriter(sw))
+            {
+                this.jsonSerializer.Serialize(jw, this.jsonObject);
+                jw.Flush();
+                return ms.ToArray();
+            }
         }
 
         [Benchmark]
@@ -49,9 +71,24 @@ namespace SerializationPerfTest
         }
 
         [Benchmark]
-        public void Xml()
+        public byte[] Xml()
         {
+            using (var ms = new MemoryStream())
+            {
+                this.dataContractSerializer.WriteObject(ms, this.dataContractObject);
+                return ms.ToArray();
+            }
+        }
 
+        [Benchmark]
+        public int BondUnsafe()
+        {
+            var output = new OutputBuffer();
+            var writer = new CompactBinaryWriter<OutputBuffer>(output);
+
+            Serialize.To(writer, this.bondObject);
+
+            return output.Data.Count;
         }
     }
 }

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace SerializationPerfTest
 {
+    [JsonObject]
     public class SmallObjectWithStringsJson
     {
         [JsonProperty]
