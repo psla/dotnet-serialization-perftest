@@ -144,7 +144,7 @@ x - tb - electrodesupportedbrowser:",
             {
                 this.jsonSerializer.Serialize(jw, this.jsonObject);
                 jw.Flush();
-                return ms.ToArray();
+                return ms.GetBuffer();
             }
         }
 
@@ -166,7 +166,7 @@ x - tb - electrodesupportedbrowser:",
             using (var ms = new MemoryStream())
             {
                 this.dataContractSerializer.WriteObject(ms, this.dataContractObject);
-                return ms.ToArray();
+                return ms.GetBuffer();
             }
         }
 
@@ -187,7 +187,7 @@ x - tb - electrodesupportedbrowser:",
             using (var ms = new MemoryStream())
             {
                 this.protoObject.WriteTo(ms);
-                return ms.ToArray();
+                return ms.GetBuffer();
             }
         }
 
@@ -198,7 +198,7 @@ x - tb - electrodesupportedbrowser:",
             {
                 BinaryFormatter formatter = new BinaryFormatter();
                 formatter.Serialize(ms, this.sampleStringObjectSerializable);
-                return ms.ToArray();
+                return ms.GetBuffer();
             }
         }
 
@@ -212,7 +212,7 @@ x - tb - electrodesupportedbrowser:",
                     using (var binaryEncoder = new BinaryEncoder(ms))
                     {
                         this.avroSerializer.Serialize(binaryEncoder, this.dataContractObject);
-                        return ms.ToArray();
+                        return ms.GetBuffer();
                     }
                 }
 
