@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using Microsoft.Hadoop.Avro;
 
 namespace SerializationPerfTest
 {
@@ -23,6 +24,7 @@ namespace SerializationPerfTest
         private DataContractSerializer dataContractSerializer;
         private SmallObjectWithStringsProtobuf protoObject;
         private SmallObjectWithStringsSerializable sampleStringObjectSerializable;
+        private IAvroSerializer<SmallObjectWithStringsDataContract> avroSerializer;
 
         [Setup]
         public void GenerateObject()
@@ -48,7 +50,7 @@ namespace SerializationPerfTest
             this.jsonSerializer = new JsonSerializer() { NullValueHandling = NullValueHandling.Ignore };
 
             this.dataContractSerializer = new DataContractSerializer(typeof(SmallObjectWithStringsDataContract));
-
+            this.avroSerializer = Microsoft.Hadoop.Avro.AvroSerializer.Create<SmallObjectWithStringsDataContract>();
             // can't use automapper here because I have null
             // this.protoObject = mapper.Map<SmallObjectWithStringsProtobuf>(this.sampleStringObject);
             this.protoObject = new SmallObjectWithStringsProtobuf
@@ -125,5 +127,27 @@ namespace SerializationPerfTest
                 return ms.ToArray();
             }
         }
+
+        [Benchmark]
+        public byte[] Avro()
+        {
+            try
+            {
+                using (var ms = new MemoryStream())
+                {
+                    using (var binaryEncoder = new BinaryEncoder(ms))
+                    {
+                        this.avroSerializer.Serialize(binaryEncoder, this.dataContractObject);
+                        return ms.ToArray();
+                    }
+                }
+
+            }
+            catch
+            {
+                // avro does not handle nulls
+                return new byte[0];
+            }
+         }
     }
 }
