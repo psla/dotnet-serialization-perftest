@@ -6,12 +6,17 @@ using System.Threading.Tasks;
 
 namespace SerializationPerfTest.BiggerObject
 {
-    public class BiggerObjectWithBytes
+    [Bond.Schema]
+    public class BiggerObjectWithBytesBond
     {
-        public Uri Uri { get; set; }
+        // note that Bond uses string as uri
+        [Bond.Id(10)]
+        public string Uri { get; set; }
 
+        [Bond.Id(20)]
         public string Header { get; set; }
 
+        [Bond.Id(30)]
         public byte[] Content { get; set; }
     }
 }

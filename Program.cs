@@ -1,6 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Google.Protobuf;
+using SerializationPerfTest.BiggerObject;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +14,8 @@ namespace SerializationPerfTest
     {
         static void Main(string[] args)
         {
-            var suite = new SerializationTestSuite<SmallObjectWithStrings, SmallObjectWithStringsDataContract, SmallObjectWithStringsBond, SmallObjectWithStringsProtobuf, SmallObjectWithStringsSerializable>();
+            // var suite = new SerializationTestSuite<SmallObjectWithStrings, SmallObjectWithStringsDataContract, SmallObjectWithStringsBond, SmallObjectWithStringsProtobuf, SmallObjectWithStringsSerializable>();
+            var suite = new SerializationTestSuite<BiggerObjectWithBytes, BiggerObjectWithBytesDataContract, BiggerObjectWithBytesBond, BiggerObjectWithBytesProtobuf, BiggerObjectWithBytesSerializable>();
             suite.GenerateObject();
             PrintLengths(suite);
 

@@ -12,6 +12,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using Microsoft.Hadoop.Avro;
 using System;
 using System.Collections.Generic;
+using SerializationPerfTest.BiggerObject;
 
 namespace SerializationPerfTest
 {
@@ -36,6 +37,40 @@ namespace SerializationPerfTest
                     String3 = "\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t",
                     String4 = null
                 }
+            },
+            {
+                typeof(BiggerObjectWithBytes),
+                new BiggerObjectWithBytes {
+                    Uri = new Uri("https://www.walmart.com/store/4340/"),
+                    Header = @"
+accept-ranges:bytes
+cache-control:max-age=0, no-cache, no-store
+content-encoding:gzip
+content-length:53638
+content-type:text/html;charset=UTF-8
+date:Tue, 10 Jan 2017 01:35:54 GMT
+expires:Tue, 10 Jan 2017 01:35:54 GMT
+last-modified:Mon, 09 Jan 2017 17:35:54 GMT
+logmon_top_tx_id:8f63b5cc-af488-15986046d90000
+origin-cc:no-cache,no-store,max-age=0
+origin-ex:Thu, 01 Jan 1970 00:00:00 GMT
+pragma:no-cache
+set-cookie:akavpau_p9=1484012754~id=d7a57f9b265a90c011fc1ff99652abc3; path=/
+set-cookie:bstc=XHQg2HdmFP7QvQl75MvtYw;Path=/;Domain=.walmart.com;Expires=Tue, 10 Jan 2017 02:05:54 GMT;Max-Age=1800
+set-cookie:akavpau_p9=1484012754~id=d7a57f9b265a90c011fc1ff99652abc3; path=/
+set-cookie:com.wm.reflector=""reflectorid:19943950091684260293@lastupd:1484012154257@firstcreate:1483930865349""; Version=1; Domain=.walmart.com; Max-Age=315360000; Expires=Fri, 08-Jan-2027 01:35:54 GMT; Path=/
+set-cookie:AID=wmlspartner%3Dlw9MynSeamY%3Areflectorid%3D19943950091684260293%3Alastupd%3D1484012154257; Version=1; Domain=walmart.com; Path=/; HttpOnly
+set-cookie:vtc=emhcptv92Ru2oVHY_Pa11k;Path=/;Domain=.walmart.com;Expires=Sun, 10 Jan 2027 13:35:54 GMT;Max-Age=315576000
+status:200
+vary:Accept-Encoding
+wm_qos.correlation_id:8f63b5cc-af488-15986046d90000,8f63b5cc-af488-15986046d90000
+x-ak-protocol:h2
+x-frame-options:DENY
+x-tb:1
+x-tb-debug-routing-tenant:defaultStorePath=/ store / 4340 /
+x - tb - electrodesupportedbrowser:",
+                    Content = File.ReadAllBytes(@"BiggerObject\index.html")
+                }
             }
         };
 
@@ -53,7 +88,20 @@ namespace SerializationPerfTest
                             String3 = obj.String3
                         };
                 }
-            }
+            },
+            {
+                Tuple.Create(typeof(BiggerObjectWithBytes), typeof(BiggerObjectWithBytesProtobuf)),
+                s =>
+                {
+                        var obj = (BiggerObjectWithBytes)s;
+                        return new BiggerObjectWithBytesProtobuf
+                        {
+                            Uri = obj.Uri.ToString(),
+                            Header = obj.Header,
+                            Content = ByteString.CopyFrom(obj.Content)
+                        };
+                }
+            },
         };
         
         [Setup]
@@ -80,7 +128,11 @@ namespace SerializationPerfTest
             // this.protoObject = mapper.Map<SmallObjectWithStringsProtobuf>(this.sampleStringObject);
             Func<object, object> map;
             if (manualMapFromTypeToType.TryGetValue(Tuple.Create<Type, Type>(typeof(TBase), typeof(TProtobuf)), out map))
-                this.protoObject = (IMessage) map(this.sampleStringObject);
+                this.protoObject = (IMessage)map(this.sampleStringObject);
+            else
+            {
+                mapper.Map<TProtobuf>(this.sampleStringObject);
+            }
         }
 
         [Benchmark]

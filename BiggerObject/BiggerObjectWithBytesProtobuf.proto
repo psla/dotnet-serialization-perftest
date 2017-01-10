@@ -1,0 +1,8 @@
+﻿syntax = "proto3";
+// .\protoc "C:\src\SerializationPerfTest\SerializationPerfTest\BiggerObject\BiggerObjectWithBytesProtobuf.proto" -I "C:\src\SerializationPerfTest\SerializationPerfTest\BiggerObject"  --csharp_out "C:\src\SerializationPerfTest\SerializationPerfTest\BiggerObject"
+
+message BiggerObjectWithBytesProtobuf {
+  string Uri = 10;
+  string Header= 20;
+  bytes Content = 30;
+}

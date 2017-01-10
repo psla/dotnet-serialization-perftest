@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace SerializationPerfTest.BiggerObject
 {
-    public class BiggerObjectWithBytes
+    [Serializable]
+    public class BiggerObjectWithBytesSerializable
     {
         public Uri Uri { get; set; }
 
