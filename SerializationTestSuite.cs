@@ -13,6 +13,7 @@ using Microsoft.Hadoop.Avro;
 using System;
 using System.Collections.Generic;
 using SerializationPerfTest.BiggerObject;
+using MsgPack.Serialization;
 
 namespace SerializationPerfTest
 {
@@ -103,7 +104,8 @@ x - tb - electrodesupportedbrowser:",
                 }
             },
         };
-        
+        private MessagePackSerializer<TBase> messagePackSerializer;
+
         [Setup]
         public void GenerateObject()
         {
@@ -124,6 +126,7 @@ x - tb - electrodesupportedbrowser:",
 
             this.dataContractSerializer = new DataContractSerializer(typeof(TContract));
             this.avroSerializer = Microsoft.Hadoop.Avro.AvroSerializer.Create<TContract>();
+            this.messagePackSerializer = MessagePackSerializer.Get<TBase>();
             // can't use automapper here because I have null
             // this.protoObject = mapper.Map<SmallObjectWithStringsProtobuf>(this.sampleStringObject);
             Func<object, object> map;
@@ -144,7 +147,7 @@ x - tb - electrodesupportedbrowser:",
             {
                 this.jsonSerializer.Serialize(jw, this.jsonObject);
                 jw.Flush();
-                return ms.GetBuffer();
+                return ms.ToArray();
             }
         }
 
@@ -166,7 +169,7 @@ x - tb - electrodesupportedbrowser:",
             using (var ms = new MemoryStream())
             {
                 this.dataContractSerializer.WriteObject(ms, this.dataContractObject);
-                return ms.GetBuffer();
+                return ms.ToArray();
             }
         }
 
@@ -187,7 +190,7 @@ x - tb - electrodesupportedbrowser:",
             using (var ms = new MemoryStream())
             {
                 this.protoObject.WriteTo(ms);
-                return ms.GetBuffer();
+                return ms.ToArray();
             }
         }
 
@@ -198,7 +201,17 @@ x - tb - electrodesupportedbrowser:",
             {
                 BinaryFormatter formatter = new BinaryFormatter();
                 formatter.Serialize(ms, this.sampleStringObjectSerializable);
-                return ms.GetBuffer();
+                return ms.ToArray();
+            }
+        }
+
+        [Benchmark]
+        public byte[] MessagePack()
+        {
+            using (var byteStream = new MemoryStream())
+            {
+                this.messagePackSerializer.Pack(byteStream, this.sampleStringObject);
+                return byteStream.ToArray();
             }
         }
 
@@ -212,7 +225,7 @@ x - tb - electrodesupportedbrowser:",
                     using (var binaryEncoder = new BinaryEncoder(ms))
                     {
                         this.avroSerializer.Serialize(binaryEncoder, this.dataContractObject);
-                        return ms.GetBuffer();
+                        return ms.ToArray();
                     }
                 }
 
