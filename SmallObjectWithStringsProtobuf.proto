@@ -1,0 +1,9 @@
+﻿syntax = "proto3";
+// .\protoc "C:\src\SerializationPerfTest\\SerializationPerfTest\SmallObjectWithStringsProtobuf.proto" -I "C:\src\SerializationPerfTest\SerializationPerfTest"  --csharp_out "C:\src\SerializationPerfTest\SerializationPerfTest\"
+
+message SmallObjectWithStringsProtobuf {
+  string String1 = 10;
+  string String2 = 20;
+  string String3 = 30;
+  string String4 = 40;
+}

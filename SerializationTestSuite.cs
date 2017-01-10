@@ -4,10 +4,12 @@ using BenchmarkDotNet.Attributes;
 using Bond;
 using Bond.IO.Unsafe;
 using Bond.Protocols;
+using Google.Protobuf;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace SerializationPerfTest
 {
@@ -19,6 +21,8 @@ namespace SerializationPerfTest
         private JsonSerializer jsonSerializer;
         private SmallObjectWithStringsJson jsonObject;
         private DataContractSerializer dataContractSerializer;
+        private SmallObjectWithStringsProtobuf protoObject;
+        private SmallObjectWithStringsSerializable sampleStringObjectSerializable;
 
         [Setup]
         public void GenerateObject()
@@ -36,6 +40,7 @@ namespace SerializationPerfTest
             };
 
             var mapper = config.CreateMapper();
+            this.sampleStringObjectSerializable = mapper.Map<SmallObjectWithStringsSerializable>(this.sampleStringObject);
             this.dataContractObject = mapper.Map<SmallObjectWithStringsDataContract>(this.sampleStringObject);
             this.bondObject = mapper.Map<SmallObjectWithStringsBond>(this.sampleStringObject);
             this.jsonObject = mapper.Map<SmallObjectWithStringsJson>(this.sampleStringObject);
@@ -43,12 +48,21 @@ namespace SerializationPerfTest
             this.jsonSerializer = new JsonSerializer() { NullValueHandling = NullValueHandling.Ignore };
 
             this.dataContractSerializer = new DataContractSerializer(typeof(SmallObjectWithStringsDataContract));
+
+            // can't use automapper here because I have null
+            // this.protoObject = mapper.Map<SmallObjectWithStringsProtobuf>(this.sampleStringObject);
+            this.protoObject = new SmallObjectWithStringsProtobuf
+            {
+                String1 = this.sampleStringObject.String1,
+                String2 = this.sampleStringObject.String2,
+                String3 = this.sampleStringObject.String3
+            };
         }
 
         [Benchmark]
         public byte[] NewtonsoftJsonReusedSerializer()
         {
-            using(var ms = new MemoryStream())
+            using (var ms = new MemoryStream())
             using (var sw = new StreamWriter(ms))
             using (var jw = new JsonTextWriter(sw))
             {
@@ -89,6 +103,27 @@ namespace SerializationPerfTest
             Serialize.To(writer, this.bondObject);
 
             return output.Data.Count;
+        }
+
+        [Benchmark]
+        public byte[] Proto3()
+        {
+            using (var ms = new MemoryStream())
+            {
+                this.protoObject.WriteTo(ms);
+                return ms.ToArray();
+            }
+        }
+
+        [Benchmark]
+        public byte[] BinaryFormatter()
+        {
+            using (var ms = new MemoryStream())
+            {
+                BinaryFormatter formatter = new BinaryFormatter();
+                formatter.Serialize(ms, this.sampleStringObjectSerializable);
+                return ms.ToArray();
+            }
         }
     }
 }
