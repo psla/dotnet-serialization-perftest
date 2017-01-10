@@ -1,5 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using Google.Protobuf;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace SerializationPerfTest
     {
         static void Main(string[] args)
         {
-            var suite = new SerializationTestSuite();
+            var suite = new SerializationTestSuite<SmallObjectWithStrings, SmallObjectWithStringsDataContract, SmallObjectWithStringsBond, SmallObjectWithStringsProtobuf, SmallObjectWithStringsSerializable>();
             suite.GenerateObject();
             PrintLengths(suite);
 
@@ -20,9 +21,9 @@ namespace SerializationPerfTest
             // var deserializationSummary = BenchmarkRunner.Run<DeserializationTests>();
         }
 
-        private static void PrintLengths(SerializationTestSuite testSuite)
+        private static void PrintLengths<TBase, TContract, TBond, TProtobuf, TPoco>(SerializationTestSuite<TBase, TContract, TBond, TProtobuf, TPoco> testSuite) where TProtobuf : IMessage
         {
-            var type = typeof(SerializationTestSuite);
+            var type = typeof(SerializationTestSuite<TBase, TContract, TBond, TProtobuf, TPoco>);
             foreach (var method in type.GetMethods())
             {
                 if (method.GetCustomAttributes(true).Any(x => x is BenchmarkAttribute))
