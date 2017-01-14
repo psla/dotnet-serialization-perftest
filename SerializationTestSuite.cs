@@ -14,10 +14,12 @@ using System;
 using System.Collections.Generic;
 using SerializationPerfTest.BiggerObject;
 using MsgPack.Serialization;
+using Thrift.Protocol;
+using Thrift.Transport;
 
 namespace SerializationPerfTest
 {
-    public class SerializationTestSuite<TBase, TContract, TBond, TProtobuf, TPoco> where TProtobuf : IMessage
+    public class SerializationTestSuite<TBase, TContract, TBond, TProtobuf, TPoco, TThrift> where TProtobuf : IMessage where TThrift : Thrift.Protocol.TBase
     {
         private TBase sampleStringObject;
         private TContract dataContractObject;
@@ -36,7 +38,7 @@ namespace SerializationPerfTest
                     String1 = "123",
                     String2 = "使用下列语言搜索设置 · 网络历史记录. 谷歌. 高级搜索语言工具. 谷歌中国换新家g.cn跳转至サービスをご利用になる際には、お客様の情報を安心して Google にお任せください。このプライバシー ポリシーは、Google が収集するデータ、データを収集する理由、Google でのデータの取り扱いについて理解を深めていただくためのものです。重要な内容ですので、必ずお読みいただくようお願いいたします。お客様の情報の管理やプライバシーとセキュリティの保護に関しては、[アカウント情報] で設定できます。",
                     String3 = "\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t",
-                    String4 = null
+                    String4 = string.Empty // no null here
                 }
             },
             {
@@ -108,6 +110,7 @@ x - tb - electrodesupportedbrowser:",
         private Serializer<CompactBinaryWriter<OutputBuffer>> compactBondSerializer;
         private Serializer<SimpleBinaryWriter<OutputBuffer>> simpleBondSerializer;
         private OutputBuffer outputBuffer = new OutputBuffer();
+        private TThrift thriftObject;
 
         [Setup]
         public void GenerateObject()
@@ -124,6 +127,7 @@ x - tb - electrodesupportedbrowser:",
             this.dataContractObject = mapper.Map<TContract>(this.sampleStringObject);
             this.bondObject = mapper.Map<TBond>(this.sampleStringObject);
             this.jsonObject = mapper.Map<TBase>(this.sampleStringObject);
+            this.thriftObject = mapper.Map<TThrift>(this.sampleStringObject);
 
             this.jsonSerializer = new JsonSerializer() { NullValueHandling = NullValueHandling.Ignore };
 
@@ -132,7 +136,7 @@ x - tb - electrodesupportedbrowser:",
             this.messagePackSerializer = MessagePackSerializer.Get<TBase>();
             this.compactBondSerializer = new Serializer<CompactBinaryWriter<OutputBuffer>>(typeof(TBond));
             this.simpleBondSerializer = new Serializer<SimpleBinaryWriter<OutputBuffer>>(typeof(TBond));
-
+            
             // can't use automapper here because I have null
             // this.protoObject = mapper.Map<SmallObjectWithStringsProtobuf>(this.sampleStringObject);
             Func<object, object> map;
@@ -297,6 +301,32 @@ x - tb - electrodesupportedbrowser:",
             {
                 // avro does not handle nulls
                 return new byte[0];
+            }
+        }
+
+        [Benchmark]
+        public byte[] ThriftBinary()
+        {
+            using (var stream = new MemoryStream())
+            {
+                TProtocol tProtocol = new TBinaryProtocol(new TStreamTransport(stream, stream));
+
+                this.thriftObject.Write(tProtocol);
+
+                return stream.ToArray();
+            }
+        }
+
+        [Benchmark]
+        public byte[] ThriftCompact()
+        {
+            using (var stream = new MemoryStream())
+            {
+                TProtocol tProtocol = new TCompactProtocol(new TStreamTransport(stream, stream));
+
+                this.thriftObject.Write(tProtocol);
+
+                return stream.ToArray();
             }
         }
     }
