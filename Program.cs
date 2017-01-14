@@ -4,6 +4,8 @@ using Google.Protobuf;
 using SerializationPerfTest.BiggerObject;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -42,11 +44,15 @@ namespace SerializationPerfTest
                     }
                     if (result is byte[])
                     {
-                        Console.WriteLine("{0}: {1} bytes", method.Name, ((byte[])result).Length);
+                        var resultBytes = (byte[])result;
+                        Console.WriteLine("{0}: {1} bytes", method.Name, resultBytes.Length);
+                        Console.WriteLine("{0} compressed (optimal): {1} bytes", method.Name, Compress(resultBytes, CompressionLevel.Optimal).Length);
+                        Console.WriteLine("{0} compressed (fastest): {1} bytes", method.Name, Compress(resultBytes, CompressionLevel.Fastest).Length);
                     }
                     else if (result is string)
                     {
-                        Console.WriteLine("{0}: {1} bytes", method.Name, Encoding.UTF8.GetBytes((string)result).Length);
+                        var bytes = Encoding.UTF8.GetBytes((string)result);
+                        Console.WriteLine("{0}: {1} bytes", method.Name, bytes.Length);
                     }
                     else if (result is int)
                     {
@@ -57,6 +63,19 @@ namespace SerializationPerfTest
                         throw new InvalidOperationException("Serialization method must return result");
                     }
                 }
+            }
+        }
+
+        private static byte[] Compress(byte[] bytes, CompressionLevel compressionLevel)
+        {
+            using (var outputStream = new MemoryStream(bytes.Length / 2))
+            {
+                using (var compression = new DeflateStream(outputStream, compressionLevel))
+                {
+                    compression.Write(bytes, 0, bytes.Length);
+                }
+
+                return outputStream.ToArray();
             }
         }
     }
