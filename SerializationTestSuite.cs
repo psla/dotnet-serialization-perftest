@@ -184,25 +184,25 @@ x - tb - electrodesupportedbrowser:",
         }
 
         [Benchmark]
-        public byte[] BondUnsafeCompact()
+        public int BondUnsafeCompact()
         {
             var output = new OutputBuffer();
             var writer = new CompactBinaryWriter<OutputBuffer>(output);
 
             Serialize.To(writer, this.bondObject);
 
-            return output.Data.Array;
+            return output.Data.Count;
         }
 
         [Benchmark]
-        public byte[] BondUnsafeSimple()
+        public int BondUnsafeSimple()
         {
             var output = new OutputBuffer();
             var writer = new SimpleBinaryWriter<OutputBuffer>(output);
 
             Serialize.To(writer, this.bondObject);
 
-            return output.Data.Array;
+            return output.Data.Count;
         }
 
         [Benchmark]
