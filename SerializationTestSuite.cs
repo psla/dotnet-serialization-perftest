@@ -105,6 +105,9 @@ x - tb - electrodesupportedbrowser:",
             },
         };
         private MessagePackSerializer<TBase> messagePackSerializer;
+        private Serializer<CompactBinaryWriter<OutputBuffer>> compactBondSerializer;
+        private Serializer<SimpleBinaryWriter<OutputBuffer>> simpleBondSerializer;
+        private OutputBuffer outputBuffer = new OutputBuffer();
 
         [Setup]
         public void GenerateObject()
@@ -127,6 +130,9 @@ x - tb - electrodesupportedbrowser:",
             this.dataContractSerializer = new DataContractSerializer(typeof(TContract));
             this.avroSerializer = Microsoft.Hadoop.Avro.AvroSerializer.Create<TContract>();
             this.messagePackSerializer = MessagePackSerializer.Get<TBase>();
+            this.compactBondSerializer = new Serializer<CompactBinaryWriter<OutputBuffer>>(typeof(TBond));
+            this.simpleBondSerializer = new Serializer<SimpleBinaryWriter<OutputBuffer>>(typeof(TBond));
+
             // can't use automapper here because I have null
             // this.protoObject = mapper.Map<SmallObjectWithStringsProtobuf>(this.sampleStringObject);
             Func<object, object> map;
@@ -174,15 +180,72 @@ x - tb - electrodesupportedbrowser:",
         }
 
         [Benchmark]
-        public int BondUnsafe()
+        public byte[] BondUnsafeCompact()
         {
             var output = new OutputBuffer();
             var writer = new CompactBinaryWriter<OutputBuffer>(output);
 
             Serialize.To(writer, this.bondObject);
 
-            return output.Data.Count;
+            return output.Data.Array;
         }
+
+        [Benchmark]
+        public byte[] BondUnsafeSimple()
+        {
+            var output = new OutputBuffer();
+            var writer = new SimpleBinaryWriter<OutputBuffer>(output);
+
+            Serialize.To(writer, this.bondObject);
+
+            return output.Data.Array;
+        }
+
+        [Benchmark]
+        public byte[] BondUnsafeCompactReused()
+        {
+            var output = new OutputBuffer();
+            var writer = new CompactBinaryWriter<OutputBuffer>(output);
+
+            this.compactBondSerializer.Serialize(this.bondObject, writer);
+
+            return output.Data.Array;
+        }
+
+        [Benchmark]
+        public byte[] BondUnsafeSimpleReused()
+        {
+            var output = new OutputBuffer();
+            var writer = new SimpleBinaryWriter<OutputBuffer>(output);
+
+            this.simpleBondSerializer.Serialize(this.bondObject, writer);
+
+            return output.Data.Array;
+        }
+
+        [Benchmark]
+        public byte[] BondUnsafeSimpleReusedBuffer()
+        {
+            this.outputBuffer.Position = 0;
+            var writer = new SimpleBinaryWriter<OutputBuffer>(this.outputBuffer);
+
+            this.simpleBondSerializer.Serialize(this.bondObject, writer);
+
+            return this.outputBuffer.Data.Array;
+        }
+        // [Benchmark]
+        // public byte[] BondUnsafeJson()
+        // {
+        //     using (var ms = new MemoryStream())
+        //     {
+        //         var writer = new SimpleJsonWriter();
+        // 
+        //         Serialize.To(writer, this.bondObject);
+        //         return ms.ToArray();
+        //     }
+        // }
+
+
 
         [Benchmark]
         public byte[] Proto3()
