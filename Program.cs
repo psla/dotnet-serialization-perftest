@@ -27,7 +27,7 @@ namespace SerializationPerfTest
 
             // var serialziationSummary = BenchmarkRunner.Run<SerializationTestSuite>();
             // var deserializationSummary = BenchmarkRunner.Run<DeserializationTests>();
-            // BenchmarkRunner.Run<SerializationTestSuite<BiggerObjectWithBytes, BiggerObjectWithBytesDataContract, BiggerObjectWithBytesBond, BiggerObjectWithBytesProtobuf, BiggerObjectWithBytesSerializable, BiggerObjectWithBytesThrift>>();
+            BenchmarkRunner.Run<SerializationTestSuite<BiggerObjectWithBytes, BiggerObjectWithBytesDataContract, BiggerObjectWithBytesBond, BiggerObjectWithBytesProtobuf, BiggerObjectWithBytesSerializable, BiggerObjectWithBytesThrift>>();
         }
 
         private static void PrintLengths<TBase, TContract, TBond, TProtobuf, TPoco, TThrift>(SerializationTestSuite<TBase, TContract, TBond, TProtobuf, TPoco, TThrift> testSuite) where TProtobuf : IMessage where TThrift : Thrift.Protocol.TBase

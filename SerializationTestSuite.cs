@@ -206,6 +206,19 @@ x - tb - electrodesupportedbrowser:",
         }
 
         [Benchmark]
+        public byte[] BondUnsafeSimpleCopied()
+        {
+            var output = new OutputBuffer();
+            var writer = new SimpleBinaryWriter<OutputBuffer>(output);
+
+            Serialize.To(writer, this.bondObject);
+
+            var resultArray = new byte[output.Data.Count];
+            Array.Copy(output.Data.Array, resultArray, output.Data.Count);
+            return resultArray;
+        }
+
+        [Benchmark]
         public byte[] BondUnsafeCompactReused()
         {
             var output = new OutputBuffer();
@@ -213,7 +226,22 @@ x - tb - electrodesupportedbrowser:",
 
             this.compactBondSerializer.Serialize(this.bondObject, writer);
 
-            return output.Data.Array;
+            var resultArray = new byte[output.Data.Count];
+            Array.Copy(output.Data.Array, resultArray, output.Data.Count);
+            return resultArray;
+        }
+
+        [Benchmark]
+        public byte[] BondUnsafeCompactReusedCopied()
+        {
+            var output = new OutputBuffer();
+            var writer = new CompactBinaryWriter<OutputBuffer>(output);
+
+            this.compactBondSerializer.Serialize(this.bondObject, writer);
+
+            var resultArray = new byte[output.Data.Count];
+            Array.Copy(output.Data.Array, resultArray, output.Data.Count);
+            return resultArray;
         }
 
         [Benchmark]
