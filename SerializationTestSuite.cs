@@ -16,6 +16,9 @@ using SerializationPerfTest.BiggerObject;
 using MsgPack.Serialization;
 using Thrift.Protocol;
 using Thrift.Transport;
+using System.Web.Script.Serialization;
+using System.Text;
+using System.Runtime.Serialization.Json;
 
 namespace SerializationPerfTest
 {
@@ -111,6 +114,8 @@ x - tb - electrodesupportedbrowser:",
         private Serializer<SimpleBinaryWriter<OutputBuffer>> simpleBondSerializer;
         private OutputBuffer outputBuffer = new OutputBuffer();
         private TThrift thriftObject;
+        private JavaScriptSerializer javascriptSerializer;
+        private DataContractJsonSerializer javascriptDataContractSerializer;
 
         [Setup]
         public void GenerateObject()
@@ -132,11 +137,13 @@ x - tb - electrodesupportedbrowser:",
             this.jsonSerializer = new JsonSerializer() { NullValueHandling = NullValueHandling.Ignore };
 
             this.dataContractSerializer = new DataContractSerializer(typeof(TContract));
+            this.javascriptDataContractSerializer = new DataContractJsonSerializer(typeof(TContract));
             this.avroSerializer = Microsoft.Hadoop.Avro.AvroSerializer.Create<TContract>();
             this.messagePackSerializer = MessagePackSerializer.Get<TBase>();
             this.compactBondSerializer = new Serializer<CompactBinaryWriter<OutputBuffer>>(typeof(TBond));
             this.simpleBondSerializer = new Serializer<SimpleBinaryWriter<OutputBuffer>>(typeof(TBond));
-            
+            this.javascriptSerializer = new JavaScriptSerializer();
+
             // can't use automapper here because I have null
             // this.protoObject = mapper.Map<SmallObjectWithStringsProtobuf>(this.sampleStringObject);
             Func<object, object> map;
@@ -179,6 +186,16 @@ x - tb - electrodesupportedbrowser:",
             using (var ms = new MemoryStream())
             {
                 this.dataContractSerializer.WriteObject(ms, this.dataContractObject);
+                return ms.ToArray();
+            }
+        }
+
+        [Benchmark]
+        public byte[] DataContractJsonSerializer()
+        {
+            using (var ms = new MemoryStream())
+            {
+                this.javascriptDataContractSerializer.WriteObject(ms, this.dataContractObject);
                 return ms.ToArray();
             }
         }
@@ -265,6 +282,13 @@ x - tb - electrodesupportedbrowser:",
 
             return this.outputBuffer.Data.Array;
         }
+
+        [Benchmark]
+        public string JavascriptSerializer()
+        {
+            return this.javascriptSerializer.Serialize(this.jsonObject);
+        }
+
         // [Benchmark]
         // public byte[] BondUnsafeJson()
         // {
@@ -276,8 +300,6 @@ x - tb - electrodesupportedbrowser:",
         //         return ms.ToArray();
         //     }
         // }
-
-
 
         [Benchmark]
         public byte[] Proto3()
